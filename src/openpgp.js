@@ -46,7 +46,8 @@ if (typeof Promise === 'undefined') {
   require('es6-promise').polyfill();
 }
 
-var asyncProxy = null; // instance of the asyncproxy
+var asyncProxies = []; // instances of the AsyncProxy(thread pool)
+var asyncProxyIndex = 0;
 
 /**
  * Set the path for the web worker script and create an instance of the async proxy
@@ -58,8 +59,12 @@ var asyncProxy = null; // instance of the asyncproxy
 function initWorker(path, options) {
   if (options && options.worker || typeof window !== 'undefined' && window.Worker) {
     options = options || {};
+    if (!options.threadsCount)
+	    options.threadsCount = 1;
     options.config = this.config;
-    asyncProxy = new AsyncProxy(path, options);
+	// initialize thread pool
+	for(var i = 0; i < options.threadsCount; i++)
+		asyncProxies.push(new AsyncProxy(path, options));
     return true;
   } else {
     return false;
@@ -71,7 +76,7 @@ function initWorker(path, options) {
  * @return {module:worker/async_proxy~AsyncProxy|null} the async proxy or null if not initialized
  */
 function getWorker() {
-  return asyncProxy;
+  return asyncProxies.length > 0 ? asyncProxies[asyncProxyIndex++ % asyncProxies.length] : null;
 }
 
 /**
@@ -86,6 +91,7 @@ function encryptMessage(keys, text) {
     keys = [keys];
   }
 
+  var asyncProxy = getWorker();
   if (asyncProxy) {
     return asyncProxy.encryptMessage(keys, text);
   }
@@ -112,7 +118,8 @@ function signAndEncryptMessage(publicKeys, privateKey, text) {
   if (!publicKeys.length) {
     publicKeys = [publicKeys];
   }
-
+  
+  var asyncProxy = getWorker();
   if (asyncProxy) {
     return asyncProxy.signAndEncryptMessage(publicKeys, privateKey, text);
   }
@@ -137,6 +144,7 @@ function signAndEncryptMessage(publicKeys, privateKey, text) {
  * @static
  */
 function decryptMessage(privateKey, msg) {
+  var asyncProxy = getWorker();
   if (asyncProxy) {
     return asyncProxy.decryptMessage(privateKey, msg);
   }
@@ -163,6 +171,7 @@ function decryptAndVerifyMessage(privateKey, publicKeys, msg) {
     publicKeys = [publicKeys];
   }
 
+  var asyncProxy = getWorker();
   if (asyncProxy) {
     return asyncProxy.decryptAndVerifyMessage(privateKey, publicKeys, msg);
   }
@@ -192,6 +201,7 @@ function signClearMessage(privateKeys, text) {
     privateKeys = [privateKeys];
   }
 
+  var asyncProxy = getWorker();
   if (asyncProxy) {
     return asyncProxy.signClearMessage(privateKeys, text);
   }
@@ -217,6 +227,7 @@ function verifyClearSignedMessage(publicKeys, msg) {
     publicKeys = [publicKeys];
   }
 
+  var asyncProxy = getWorker();
   if (asyncProxy) {
     return asyncProxy.verifyClearSignedMessage(publicKeys, msg);
   }
@@ -246,7 +257,8 @@ function verifyClearSignedMessage(publicKeys, msg) {
  * @static
  */
 function generateKeyPair(options) {
-  // use web worker if web crypto apis are not supported
+  var asyncProxy = getWorker();
+  // use web worker if web crypto apis are not supported  
   if (!util.getWebCrypto() && asyncProxy) {
     return asyncProxy.generateKeyPair(options);
   }

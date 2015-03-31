@@ -60,14 +60,6 @@ module.exports = function(grunt) {
           from: /OpenPGP.js VERSION/g,
           to: 'OpenPGP.js v<%= pkg.version %>'
         }]
-      },
-      worker_min: {
-        src: ['dist/openpgp.worker.min.js'],
-        dest: ['dist/openpgp.worker.min.js'],
-        replacements: [{
-          from: "importScripts('openpgp.js')",
-          to: "importScripts('openpgp.min.js')"
-        }]
       }
     },
     uglify: {

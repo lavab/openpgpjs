@@ -81,7 +81,7 @@ function getWorker() {
 
 function createMessage(src) {
 	return Object.prototype.toString.call(src) == '[object Uint8Array]' 
-		? message.fromBinary(src) 
+		? message.fromBinary(util.Uint8Array2str(src))
 		: message.fromText(src);
 }
 

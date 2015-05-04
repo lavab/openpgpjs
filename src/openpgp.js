@@ -79,6 +79,12 @@ function getWorker() {
   return asyncProxies.length > 0 ? asyncProxies[asyncProxyIndex++ % asyncProxies.length] : null;
 }
 
+function createMessage(src) {
+	return Object.prototype.toString.call(src) == '[object Uint8Array]' 
+		? message.fromBinary(src) 
+		: message.fromText(src);
+}
+
 /**
  * Encrypts message text with keys
  * @param  {(Array<module:key~Key>|module:key~Key)}  keys array of keys or single key, used to encrypt the message
@@ -98,7 +104,7 @@ function encryptMessage(keys, text) {
 
   return execute(function() {
     var msg, armored;
-    msg = message.fromText(text);
+    msg = createMessage(text);
     msg = msg.encrypt(keys);
     armored = armor.encode(enums.armor.message, msg.packets.write());
     return armored;
@@ -126,7 +132,7 @@ function signAndEncryptMessage(publicKeys, privateKey, text) {
 
   return execute(function() {
     var msg, armored;
-    msg = message.fromText(text);
+    msg = createMessage(text);
     msg = msg.sign([privateKey]);
     msg = msg.encrypt(publicKeys);
     armored = armor.encode(enums.armor.message, msg.packets.write());

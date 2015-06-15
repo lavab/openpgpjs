@@ -11895,7 +11895,7 @@ Message.prototype.decrypt = function(privateKey) {
     return this;
   }
   var privateKeyPacket = privateKey.getKeyPacket(encryptionKeyIds);
-  if (!privateKeyPacket.isDecrypted) throw new Error('Private key is not decrypted.');
+  if (!privateKeyPacket || !privateKeyPacket.isDecrypted) throw new Error('Private key is not decrypted.');
   var pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
   var pkESKeyPacket;
   for (var i = 0; i < pkESKeyPacketlist.length; i++) {
